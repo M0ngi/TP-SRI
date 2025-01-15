@@ -26,7 +26,7 @@ def load_movies_csv() -> list[dict]:
     
     # Process remaining rows
     parsed_movies = []
-    COUNT_LIMIT = 100
+    COUNT_LIMIT = 2000
     LIMIT = True
     i = 0
     for row in movies[1:]:
