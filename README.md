@@ -1,4 +1,4 @@
-# Movie Search Engine with TF-IDF and Gamma Encoding
+# Movie Search Engine
 
 ## Overview
 This project implements an information retrieval system for searching movies using TF-IDF scoring and gamma encoding compression. The system processes movie metadata, builds a compressed inverted index, and enables natural language queries to find relevant movies based on their descriptions and metadata.
