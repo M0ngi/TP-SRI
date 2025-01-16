@@ -7,6 +7,8 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from collections import defaultdict, Counter
 from sri_encodings import gap_encode, compress_gamma_binary, decompress_gamma_binary, gap_decode
+from nltk.stem import PorterStemmer
+from nltk import pos_tag
 
 
 def term_frequency_natural(term, doc_id, processed_documents):
@@ -34,13 +36,66 @@ def idf_log(documents, documents_count):
     return math.log(len(documents) / documents_count) if documents_count > 0 else 0
 
 
+def preprocess_document_racinisation(doc: str) -> list[str]:
+    # Initialize the Porter Stemmer
+    stemmer = PorterStemmer()
+    
+    # Convert the document to lowercase
+    doc = doc.lower()
+    
+    # Tokenize the document into words
+    tokens = word_tokenize(doc)
+    
+    # Perform stemming (racination)
+    stemmed_tokens = [stemmer.stem(word) for word in tokens]
+    return stemmed_tokens
+
+
+def preprocess_document_lemmatization(doc: str):
+    tokens = word_tokenize(doc.lower())
+    stop_words = set(stopwords.words("english"))
+    tokens = [
+        word
+        for word in tokens
+        if word not in stop_words and word not in string.punctuation
+    ]
+
+    doc_spacy = nlp(" ".join(tokens))
+    lemmatized_tokens = [token.lemma_ for token in doc_spacy]
+
+    return lemmatized_tokens
+
+
+def preprocess_document_etiquettage(doc: str) -> list[tuple]:
+   
+    # Tokenize the document into words
+    tokens = word_tokenize(doc)
+    
+    # Perform POS tagging
+    pos_tags = pos_tag(tokens)
+    return pos_tags
+
+
 class Config:
     term_frequency_function = term_frequency_log
     idf_function = idf_log
+    preprocess_function = preprocess_document_lemmatization
 
 
 def select_config():
     print("Select a configuration:")
+    
+    print("Preprocessing function:")
+    print("1. Lemmatization")
+    print("2. Racination")
+    print("3. Etiquettage")
+    choice = input("Enter the number of the configuration: ")
+    if choice == "1":
+        Config.preprocess_function = preprocess_document_lemmatization
+    elif choice == "2":
+        Config.preprocess_function = preprocess_document_racinisation
+    elif choice == "3":
+        Config.preprocess_function = preprocess_document_etiquettage
     
     print("Term frequency function:")
     print("1. Natural")
@@ -119,25 +174,10 @@ def convert_to_documents(movies: list[dict]) -> list[str]:
     return documents
 
 
-def preprocess_document(doc: str):
-    tokens = word_tokenize(doc.lower())
-    stop_words = set(stopwords.words("english"))
-    tokens = [
-        word
-        for word in tokens
-        if word not in stop_words and word not in string.punctuation
-    ]
-
-    doc_spacy = nlp(" ".join(tokens))
-    lemmatized_tokens = [token.lemma_ for token in doc_spacy]
-
-    return lemmatized_tokens
-
-
 def process_documents(documents: list[str]) -> list[str]:
     processed_documents = []
     for document in documents:
-        processed_documents.append(preprocess_document(document))
+        processed_documents.append(Config.preprocess_function(document))
     return processed_documents
 
 
@@ -184,7 +224,7 @@ def compute_tfidf(processed_documents, compressed_index):
 
 
 def compute_query_vector(query, tfidf, compressed_index):
-    query_terms = preprocess_document(query)
+    query_terms = Config.preprocess_function(query)
     query_vector = defaultdict(float)
 
     for term in query_terms:
