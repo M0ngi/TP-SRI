@@ -9,6 +9,61 @@ from collections import defaultdict, Counter
 from sri_encodings import gap_encode, compress_gamma_binary, decompress_gamma_binary, gap_decode
 
 
+def term_frequency_natural(term, doc_id, processed_documents):
+    terms = processed_documents[doc_id]
+    counter = Counter(terms)
+    return counter[term] if term in counter else 0
+
+
+def term_frequency_log(term, doc_id, processed_documents):
+    count = term_frequency_natural(term, doc_id, processed_documents)
+    return 1 + math.log(count) if count > 0 else 0
+
+
+def term_frequency_augmented(term, doc_id, processed_documents):
+    terms = processed_documents[doc_id]
+    count = term_frequency_natural(term, doc_id, processed_documents)
+    return 0.5 + 0.5 * count / max(term_frequency_natural(t, doc_id, processed_documents) for t in terms)
+
+
+def idf_normal(_documents, _documents_count):
+    return 1
+
+
+def idf_log(documents, documents_count):
+    return math.log(len(documents) / documents_count) if documents_count > 0 else 0
+
+
+class Config:
+    term_frequency_function = term_frequency_log
+    idf_function = idf_log
+
+
+def select_config():
+    print("Select a configuration:")
+    
+    print("Term frequency function:")
+    print("1. Natural")
+    print("2. Logarithmic")
+    print("3. Augmented")
+    choice = input("Enter the number of the configuration: ")
+    if choice == "1":
+        Config.term_frequency_function = term_frequency_natural
+    elif choice == "2":
+        Config.term_frequency_function = term_frequency_log
+    elif choice == "3":
+        Config.term_frequency_function = term_frequency_augmented
+
+    print("IDF function:")
+    print("1. Normal")
+    print("2. Logarithmic")
+    choice = input("Enter the number of the configuration: ")
+    if choice == "1":
+        Config.idf_function = idf_normal
+    elif choice == "2":
+        Config.idf_function = idf_log
+
+
 def setup_nltk() -> spacy.language.Language:
     nltk.download("punkt")
     nltk.download("punkt_tab")
@@ -117,15 +172,13 @@ def compute_tfidf(processed_documents, compressed_index):
 
     for term in compressed_index.keys():
         doc_ids = retrieve_postings_list(compressed_index, term)
-        idf[term] = math.log(doc_count / (len(doc_ids))) if len(doc_ids) > 0 else 0
+
+        idf[term] = Config.idf_function(processed_documents, len(doc_ids))
 
         for doc_id in doc_ids:
-            terms = processed_documents[doc_id]
-            term_count = Counter(terms)
-            tf[term][doc_id] = (
-                1 + math.log(term_count[term]) if term in term_count else 0
-            )
-            tfidf[term][doc_id] = tf[term][doc_id] * idf[term]
+            tf_val = Config.term_frequency_function(term, doc_id, processed_documents)
+ 
+            tfidf[term][doc_id] = tf_val * idf[term]
 
     return tfidf
 
@@ -182,6 +235,7 @@ def search_print_result(query, processed_documents, tfidf, inverted_index):
         print(f"Document {doc_id}, Movie name: {movies[doc_id]['original_title']}: Score = {score}")
 
 
+select_config()
 nlp = setup_nltk()
 movies = load_movies_csv()
 documents = convert_to_documents(movies)
