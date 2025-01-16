@@ -66,14 +66,14 @@ def preprocess_document_lemmatization(doc: str):
     return lemmatized_tokens
 
 
-def preprocess_document_etiquettage(doc: str) -> list[tuple]:
+# def preprocess_document_etiquettage(doc: str) -> list[tuple]:
    
-    # Tokenize the document into words
-    tokens = word_tokenize(doc)
+#     # Tokenize the document into words
+#     tokens = word_tokenize(doc)
     
-    # Perform POS tagging
-    pos_tags = pos_tag(tokens)
-    return pos_tags
+#     # Perform POS tagging
+#     pos_tags = pos_tag(tokens)
+#     return pos_tags
 
 
 class Config:
@@ -88,14 +88,14 @@ def select_config():
     print("Preprocessing function:")
     print("1. Lemmatization")
     print("2. Racination")
-    print("3. Etiquettage")
+    # print("3. Etiquettage")
     choice = input("Enter the number of the configuration: ")
     if choice == "1":
         Config.preprocess_function = preprocess_document_lemmatization
     elif choice == "2":
         Config.preprocess_function = preprocess_document_racinisation
-    elif choice == "3":
-        Config.preprocess_function = preprocess_document_etiquettage
+    # elif choice == "3":
+    #     Config.preprocess_function = preprocess_document_etiquettage
     
     print("Term frequency function:")
     print("1. Natural")
@@ -123,6 +123,7 @@ def setup_nltk() -> spacy.language.Language:
     nltk.download("punkt")
     nltk.download("punkt_tab")
     nltk.download("stopwords")
+    nltk.download('averaged_perceptron_tagger_eng')
     nlp = spacy.load("en_core_web_sm")
     return nlp
 
@@ -136,7 +137,7 @@ def load_movies_csv() -> list[dict]:
     
     # Process remaining rows
     parsed_movies = []
-    COUNT_LIMIT = 2000
+    COUNT_LIMIT = 200
     LIMIT = True
     i = 0
     for row in movies[1:]:
